@@ -1,0 +1,34 @@
+variables:
+- group: lp22_caseStudy4_VariableGroup
+- name: rgName
+  value: 'lp22-casestudy4-dev'
+- name: location
+  value: 'northeurope'
+- name: spnName
+  value: 'lp22-casestudy-devops-spn'
+
+resources:
+  - repo: self
+  
+trigger: none
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+- stage: Deploylb
+  jobs:
+  - job: Deploylb
+    displayName: "Deploy lb"
+    steps:
+    - task: AzureResourceGroupDeployment@2
+      displayName: "Deploy lb"
+      inputs:
+        azureSubscription: $(spnName)
+        resourceGroupName: $(rgName)
+        location: $(location)
+        csmFile: $(Build.SourcesDirectory)/Modules/LoadBalancer/lbdeploy.json
+        csmParametersFile: $(Build.SourcesDirectory)/Modules/LoadBalancer/lbdeploy.parameters.json
+        overrideParameters: '-virtualNetworkName "vnet-lp22-casestudy4" 
+                            -subnetName "snet-api"
+                            -loadBalancerName "lb-lp22-casestudy4"'

@@ -1,0 +1,21 @@
+trigger: none
+
+stages:
+- template: run.yaml
+  parameters:
+    environment: "Development"
+    rgName: "rg-team-2-jan-ado-training-we"
+    kvName: 'kv-team2-dev-101'
+    crName: 'crheroratingdev101'
+    aspName: 'app-serviceplanteam2-dev-101'
+    appName: 'app-ratingwebteam2-dev-101'
+- template: run.yaml
+  parameters:
+    environment: "Production"
+    rgName: "rg-team-2-jan-case-we"
+    kvName: 'kv-team2-prd-101'
+    crName: 'crheroratingprd101'
+    aspName: 'app-serviceplanteam2-prd-101'
+    appName: 'app-ratingwebteam2-prd-101'
+#s
+#test

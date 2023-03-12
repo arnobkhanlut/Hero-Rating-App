@@ -1,0 +1,27 @@
+variables:
+  rgName: 'lp22-casestudy4-dev'
+  location: 'northeurope'
+  spnName: 'lp22-casestudy-devops-spn'
+
+resources:
+  - repo: self
+  
+trigger: none
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+- stage: DeployVirtualNetwork
+  jobs:
+  - job: DeployVirtualNetwork
+    displayName: "Deploy VirtualNetwork"
+    steps:
+    - task: AzureResourceGroupDeployment@2
+      displayName: "Deploy VirtualNetwork"
+      inputs:
+        azureSubscription: $(spnName)
+        resourceGroupName: $(rgName)
+        location: $(location)
+        csmFile: $(Build.SourcesDirectory)/Modules/VirtualNetwork/vnetdeploy.json
+        csmParametersFile: $(Build.SourcesDirectory)/Modules/VirtualNetwork/vnetdeploy.parameters.json

@@ -1,0 +1,29 @@
+parameters:
+- name: rgName
+  default: 'lp22-casestudy4-dev'
+- name: location
+  default: 'northeurope'
+- name: spnName
+  default: 'lp22-casestudy-devops-spn'
+- name: virtualNetworkName
+  default: "vnet-lp22-casestudy4"
+
+
+jobs:
+- job: Deploydbvm
+  displayName: "Deploy dbvm"
+  steps:
+  - task: AzureResourceGroupDeployment@2
+    displayName: "Deploy dbvm"
+    inputs:
+      azureSubscription: ${{parameters.spnName}}
+      resourceGroupName: ${{parameters.rgName}}
+      location: ${{parameters.location}}
+      csmFile: $(Build.SourcesDirectory)/Modules/VirtualMachines/dbvmdeploy.json
+      csmParametersFile: $(Build.SourcesDirectory)/Modules/VirtualMachines/dbvmdeploy.parameters.json
+      overrideParameters: '-virtualNetworkName ${{ parameters.virtualNetworkName }} 
+                           -subnetName "snet-db" 
+                           -adminPasswordOrKey $(vmAdminPassword)
+                           -fileUris $(dbscript) 
+                           -blobBaseUri $(blobbaseurl) 
+                           -blobSasToken "$(blobsastoken)"'

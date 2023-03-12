@@ -1,0 +1,13 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "keyVaultName": {
+            "value": "kv-casestudy4team4" 
+        },
+
+        "objectId": {
+            "value": "cce97344-5cf4-430d-ad04-fde0bcd06c8a" 
+        }
+    }
+}

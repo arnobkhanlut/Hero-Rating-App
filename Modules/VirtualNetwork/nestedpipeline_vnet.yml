@@ -1,0 +1,23 @@
+parameters:
+- name: rgName
+  default: 'lp22-casestudy4-dev'
+- name: location
+  default: 'northeurope'
+- name: spnName
+  default: 'lp22-casestudy-devops-spn'
+- name: virtualNetworkName
+  default: 'vnet-lp22-casestudy4'
+
+jobs:
+- job: DeployVirtualNetwork
+  displayName: "Deploy VirtualNetwork"
+  steps:
+  - task: AzureResourceGroupDeployment@2
+    displayName: "Deploy VirtualNetwork"
+    inputs:
+      azureSubscription: ${{parameters.spnName}}
+      resourceGroupName: ${{parameters.rgName}}
+      location: ${{parameters.location}}
+      csmFile: $(Build.SourcesDirectory)/Modules/VirtualNetwork/vnetdeploy.json
+      csmParametersFile: $(Build.SourcesDirectory)/Modules/VirtualNetwork/vnetdeploy.parameters.json
+      overrideParameters:  '-virtualNetworkName ${{ parameters.virtualNetworkName }}'

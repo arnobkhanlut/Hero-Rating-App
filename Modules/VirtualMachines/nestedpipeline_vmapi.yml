@@ -1,0 +1,28 @@
+parameters:
+- name: rgName
+  default: 'lp22-casestudy4-dev'
+- name: location
+  default: 'northeurope'
+- name: spnName
+  default: 'lp22-casestudy-devops-spn'
+- name: virtualNetworkName
+  default: "vnet-lp22-casestudy4"
+
+jobs:
+- job: Deployapivmss
+  displayName: "Deploy apivmss"
+  steps:
+  - task: AzureResourceGroupDeployment@2
+    displayName: "Deploy apivmss"
+    inputs:
+      azureSubscription: ${{parameters.spnName}}
+      resourceGroupName: ${{parameters.rgName}}
+      location: ${{parameters.location}}
+      csmFile: $(Build.SourcesDirectory)/Modules/VirtualMachines/apivmssdeploy.json
+      csmParametersFile: $(Build.SourcesDirectory)/Modules/VirtualMachines/apivmssdeploy.parameters.json
+      overrideParameters: '-virtualNetworkName ${{ parameters.virtualNetworkName }} 
+                           -subnetName "snet-api" 
+                           -adminPasswordOrKey $(vmAdminPassword)
+                           -fileUris $(apiscript) 
+                           -blobBaseUri $(blobbaseurl) 
+                           -blobSasToken "$(blobsastoken)"'

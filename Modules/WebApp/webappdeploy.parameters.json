@@ -1,0 +1,38 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "webAppName": {
+            "value": "lp22herorating"
+        },
+        "environment": {
+            "value": "dev" 
+        },
+        "appServiceSku": {
+            "value": "P1v2"
+        },
+        "dockerImageName": {
+            "value": "lp22casestudy4dev.azurecr.io/azureworkshop/rating-web:v1"
+        },
+        "dockerRegistryUrl": {
+            "value": "lp22casestudy4dev.azurecr.io"
+        },
+        "dockerRegistryUsername": {
+            "value": "lp22casestudy4dev"
+        },
+        "dockerRegistryPassword": {
+            "reference": {
+                "keyVault": {
+                  "id": "/subscriptions/56f39360-7d54-4ca9-a5db-619e7dfd47d5/resourceGroups/lp22-casestudy4-dev/providers/Microsoft.KeyVault/vaults/kv-casestudy4team4"
+                },
+                "secretName": "dockerpassword"
+            }
+        },
+        "virtualNetworkName": {
+            "value": "vnet-lp22-casestudy4"
+        },
+        "subnetName": {
+            "value": "snet-app"
+        }
+    }
+}

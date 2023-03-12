@@ -1,0 +1,256 @@
+parameters:
+- name: location
+  type: string
+  default: 'West Europe'
+- name: subId
+  type: string
+  default: 'd83b7584-6aa1-4abd-bc3d-c67621518e2f'
+- name: armConnection
+  type: string
+  default: 'launchpad-azure-01-2022'
+- name: rgName
+  type: string
+  default: 'rg-team-2-jan-case-ado-we'
+- name: logAnaName
+  type: string
+  default: "la-team2-workspace"
+- name: kvName
+  type: string
+  default: 'kv-team2-807'
+- name: crName
+  type: string
+  default: 'crheroratingprod705'
+- name: aspName
+  type: string
+  default: 'app-serviceplanteam2-prod-705'
+- name: appName
+  type: string
+  default: 'app-ratingwebteam2-prod-705'
+- name: vNetName
+  type: string
+  default: 'vnet-team2-001'
+- name: environment
+  type: string
+  default: 'Development'
+
+
+stages:
+- stage: ${{ parameters.environment }}
+  jobs:
+  - job: DeployVnet
+    displayName: "DeployVnet"
+    steps:
+    - task: AzureResourceManagerTemplateDeployment@3
+      displayName: 'DeployVnetTASK'
+      inputs:
+        azureResourceManagerConnection: ${{ parameters.armConnection }}
+        subscriptionId: ${{ parameters.subId }}
+        resourceGroupName: ${{ parameters.rgName }}
+        location: ${{ parameters.location }}
+        templateLocation: 'Linked artifact'
+        deploymentMode: 'Incremental'
+        csmFile: $(Build.SourcesDirectory)/deployVnet.json
+        csmParametersFile: $(Build.SourcesDirectory)/deployVnet.parameters.json
+        overrideParameters:  '-vNetworkName ${{ parameters.vNetName }}'
+  - job: DeployKv
+    dependsOn: DeployVnet
+    displayName: "DeployKv"
+    steps:
+    - task: AzureResourceManagerTemplateDeployment@3
+      displayName: "DeployKv"
+      inputs:
+          azureResourceManagerConnection: ${{ parameters.armConnection }}
+          subscriptionId: ${{ parameters.subId }}
+          resourceGroupName: ${{ parameters.rgName }}
+          location: ${{ parameters.location }}
+          templateLocation: 'Linked artifact'
+          deploymentMode: 'Incremental'
+          csmFile: $(Build.SourcesDirectory)/kv.json
+          csmParametersFile: $(Build.SourcesDirectory)/kv.parameters.json
+          overrideParameters:  '-keyVaultName ${{ parameters.kvName }}'
+  - job: DeployBastion
+    dependsOn: DeployKv
+    displayName: "DeployBastion"
+    steps:
+    - task: AzureResourceManagerTemplateDeployment@3
+      displayName: "DeployBastion"
+      inputs:
+          azureResourceManagerConnection: ${{ parameters.armConnection }}
+          subscriptionId: ${{ parameters.subId }}
+          resourceGroupName: ${{ parameters.rgName }}
+          location: ${{ parameters.location }}
+          templateLocation: 'Linked artifact'
+          deploymentMode: 'Incremental'
+          csmFile: $(Build.SourcesDirectory)/bastion.json
+          csmParametersFile: $(Build.SourcesDirectory)/bastion.parameters.json
+  - job: DeployLogAnalytics
+    dependsOn: DeployBastion
+    displayName: "DeployLogAnalytics"
+    steps:
+    - task: AzureResourceManagerTemplateDeployment@3
+      displayName: "DeployLogAnalytics"
+      inputs:
+          azureResourceManagerConnection: ${{ parameters.armConnection }}
+          subscriptionId: ${{ parameters.subId }}
+          resourceGroupName: ${{ parameters.rgName }}
+          location: ${{ parameters.location }}
+          templateLocation: 'Linked artifact'
+          deploymentMode: 'Incremental'
+          csmFile: $(Build.SourcesDirectory)/la.json
+          csmParametersFile: $(Build.SourcesDirectory)/la.parameters.json
+          overrideParameters:  '-logAnalyticsName ${{ parameters.logAnaName }}'
+  - job: DeployDb
+    dependsOn: DeployLogAnalytics
+    displayName: "DeployDb"
+    steps:
+    - task: AzureKeyVault@1
+      inputs:
+        azureSubscription: ${{ parameters.armConnection }}
+        KeyVaultName: ${{ parameters.kvName }}
+        SecretsFilter: 'azureuserDB'
+        RunAsPreJob: true
+    - task: AzureResourceManagerTemplateDeployment@3
+      displayName: "DeployDb"
+      inputs:
+          azureResourceManagerConnection: ${{ parameters.armConnection }}
+          subscriptionId: ${{ parameters.subId }}
+          resourceGroupName: ${{ parameters.rgName }}
+          location: ${{ parameters.location }}
+          templateLocation: 'Linked artifact'
+          deploymentMode: 'Incremental'
+          csmFile: $(Build.SourcesDirectory)/db.json
+          csmParametersFile: $(Build.SourcesDirectory)/db.parameters.json
+          overrideParameters:  '-adminPasswordOrKey $(azureuserDB)'
+  - job: DeployCr
+    dependsOn: DeployDb
+    displayName: "DeployCr"
+    steps:
+    - task: AzureResourceManagerTemplateDeployment@3
+      displayName: "DeployCr"
+      inputs:
+          azureResourceManagerConnection: ${{ parameters.armConnection }}
+          subscriptionId: ${{ parameters.subId }}
+          resourceGroupName: ${{ parameters.rgName }}
+          location: ${{ parameters.location }}
+          templateLocation: 'Linked artifact'
+          deploymentMode: 'Incremental'
+          csmFile: $(Build.SourcesDirectory)/cr.json
+          csmParametersFile: $(Build.SourcesDirectory)/cr.parameters.json
+          overrideParameters:  '-keyVaultName ${{ parameters.kvName }}
+                               -acrName ${{ parameters.crName }}'
+  - job: DeployDocker
+    dependsOn: DeployCr
+    displayName: "DeployDocker"
+    steps:
+    - task: AzureKeyVault@1
+      inputs:
+        azureSubscription: ${{ parameters.armConnection }}
+        KeyVaultName: ${{ parameters.kvName }}
+        SecretsFilter: 'crAccessKey'
+        RunAsPreJob: true
+    - task: AzureResourceManagerTemplateDeployment@3
+      displayName: "DeployDocker"
+      inputs:
+          azureResourceManagerConnection: ${{ parameters.armConnection }}
+          subscriptionId: ${{ parameters.subId }}
+          resourceGroupName: ${{ parameters.rgName }}
+          location: ${{ parameters.location }}
+          templateLocation: 'Linked artifact'
+          deploymentMode: 'Incremental'
+          csmFile: $(Build.SourcesDirectory)/docker.json
+          csmParametersFile: $(Build.SourcesDirectory)/docker.parameters.json
+          overrideParameters:  '-adminPasswordOrKey $(crAccessKey)
+                               -acrName ${{ parameters.crName }}'
+  - job: DeployDbCustomScript
+    dependsOn: DeployDocker
+    displayName: "DeployDbCustomScript"
+    steps:
+    - task: AzureResourceManagerTemplateDeployment@3
+      displayName: "DeployDbCustomScript"
+      inputs:
+          azureResourceManagerConnection: ${{ parameters.armConnection }}
+          subscriptionId: ${{ parameters.subId }}
+          resourceGroupName: ${{ parameters.rgName }}
+          location: ${{ parameters.location }}
+          templateLocation: 'Linked artifact'
+          deploymentMode: 'Incremental'
+          csmFile: $(Build.SourcesDirectory)/dbCustomScript.json
+  - job: DeploySsAndLb
+    dependsOn: DeployDbCustomScript
+    displayName: "DeploySsAndLb"
+    steps:
+    - task: AzureKeyVault@1
+      inputs:
+        azureSubscription: ${{ parameters.armConnection }}
+        KeyVaultName: ${{ parameters.kvName }}
+        SecretsFilter: 'azureuserAPI'
+        RunAsPreJob: true
+    - task: AzureResourceManagerTemplateDeployment@3
+      displayName: "DeploySsAndLb"
+      inputs:
+          azureResourceManagerConnection: ${{ parameters.armConnection }}
+          subscriptionId: ${{ parameters.subId }}
+          resourceGroupName: ${{ parameters.rgName }}
+          location: ${{ parameters.location }}
+          templateLocation: 'Linked artifact'
+          deploymentMode: 'Incremental'
+          csmFile: $(Build.SourcesDirectory)/deploySsAndLb.json
+          csmParametersFile: $(Build.SourcesDirectory)/deploySsAndLb.parameters.json
+          overrideParameters:  '-adminPasswordOrKey $(azureuserAPI)
+                               -virtualNetwork ${{ parameters.vNetName }}'
+  - job: DeployApiCustomScript
+    dependsOn: DeploySsAndLb
+    displayName: "DeployApiCustomScript"
+    steps:
+    - task: AzureResourceManagerTemplateDeployment@3
+      displayName: "DeployApiCustomScript"
+      inputs:
+          azureResourceManagerConnection: ${{ parameters.armConnection }}
+          subscriptionId: ${{ parameters.subId }}
+          resourceGroupName: ${{ parameters.rgName }}
+          location: ${{ parameters.location }}
+          templateLocation: 'Linked artifact'
+          deploymentMode: 'Incremental'
+          csmFile: $(Build.SourcesDirectory)/apiCustomScript.json
+  - job: DeployAppServicePlan
+    dependsOn: DeployApiCustomScript
+    displayName: "DeployAppServicePlan"
+    steps:
+    - task: AzureResourceManagerTemplateDeployment@3
+      displayName: "DeployAppServicePlan"
+      inputs:
+          azureResourceManagerConnection: ${{ parameters.armConnection }}
+          subscriptionId: ${{ parameters.subId }}
+          resourceGroupName: ${{ parameters.rgName }}
+          location: ${{ parameters.location }}
+          templateLocation: 'Linked artifact'
+          deploymentMode: 'Incremental'
+          csmFile: $(Build.SourcesDirectory)/appserviceplan.json
+          overrideParameters:  '-app_service_plan_name ${{ parameters.aspName }}'
+  - job: DeployWebApp
+    dependsOn: DeployAppServicePlan
+    displayName: "DeployWebApp"
+    steps:
+    - task: AzureKeyVault@1
+      inputs:
+        azureSubscription: ${{ parameters.armConnection }}
+        KeyVaultName: ${{ parameters.kvName }}
+        SecretsFilter: 'crAccessKey'
+        RunAsPreJob: true
+    - task: AzureResourceManagerTemplateDeployment@3
+      displayName: "DeployWebApp"
+      inputs:
+          azureResourceManagerConnection: ${{ parameters.armConnection }}
+          subscriptionId: ${{ parameters.subId }}
+          resourceGroupName: ${{ parameters.rgName }}
+          location: ${{ parameters.location }}
+          templateLocation: 'Linked artifact'
+          deploymentMode: 'Incremental'
+          csmFile: $(Build.SourcesDirectory)/webapp.json
+          overrideParameters:  '-app_service_name ${{ parameters.appName }}
+                                -app_service_plan_name ${{ parameters.aspName }}
+                                -resourceGroupName ${{ parameters.rgName }}
+                                -subscriptionId ${{ parameters.subId }}
+                                -virtualNetwork ${{ parameters.vNetName }}
+                                -containerRegistry ${{ parameters.crName }}
+                                -adminPasswordOrKey $(crAccessKey)'

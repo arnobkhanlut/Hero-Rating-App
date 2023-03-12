@@ -1,0 +1,42 @@
+parameters:
+- name: kvName
+  type: string
+  default: kv-casestudy4team4
+variables:
+- group: lp22_caseStudy4_VariableGroup
+- name: rgName
+  value: 'lp22-casestudy4-dev'
+- name: location
+  value: 'northeurope'
+- name: spnName
+  value: 'lp22-casestudy-devops-spn'
+
+resources:
+  - repo: self
+  
+trigger: none
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+- stage: Deploywebapp
+  jobs:
+  - job: Deploywebapp
+    displayName: "Deploy webapp"
+    steps:
+    - task: AzureKeyVault@1
+      inputs:
+        azureSubscription: $(spnName)
+        KeyVaultName: ${{ parameters.kvName }}
+        SecretsFilter: 'dockerpassword'
+        RunAsPreJob: true
+    - task: AzureResourceGroupDeployment@2
+      displayName: "Deploy webapp"
+      inputs:
+        azureSubscription: $(spnName)
+        resourceGroupName: $(rgName)
+        location: $(location)
+        csmFile: $(Build.SourcesDirectory)/Modules/WebApp/webappdeploy.json
+        csmParametersFile: $(Build.SourcesDirectory)/Modules/WebApp/webappdeploy.parameters.json
+        overrideParameters: '-dockerRegistryPassword $(dockerpassword)'

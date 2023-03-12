@@ -1,0 +1,48 @@
+parameters:
+- name: AcrName
+  type: string
+  default: lp22casestudy4dev
+- name: keyVaultName
+  default: 'kv-casestudy4team4'
+  
+variables:
+- group: lp22_caseStudy4_VariableGroup
+- name: rgName
+  value: 'lp22-casestudy4-dev'
+- name: location
+  value: 'northeurope'
+- name: spnName
+  value: 'lp22-casestudy-devops-spn'
+
+resources:
+  - repo: self
+  
+trigger: none
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+- stage: Deployacr
+  jobs:
+  - job: Deployacr
+    displayName: "Deploy acr"
+    steps:
+    - task: AzureResourceGroupDeployment@2
+      displayName: "Deploy acr"
+      inputs:
+        azureSubscription: $(spnName)
+        resourceGroupName: $(rgName)
+        location: $(location)
+        csmFile: $(Build.SourcesDirectory)/Modules/ContainerRegistries/acrdeploy.json
+        csmParametersFile: $(Build.SourcesDirectory)/Modules/ContainerRegistries/acrdeploy.parameters.json
+        overrideParameters: '-AcrName ${{parameters.AcrName}}
+                             -keyVaultName ${{parameters.keyVaultName}}'
+    - task: AzureCLI@2
+      displayName: Build and push docker image
+      inputs:
+        azureSubscription: $(spnName)
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript: |
+          az acr build --registry ${{ parameters.AcrName }} --build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"`  --build-arg IMAGE_TAG_REF=v1 --build-arg APISERVER=http://10.1.1.6 --image azureworkshop/rating-web:v1 --file $(Build.SourcesDirectory)/Modules/ContainerRegistries/web/Dockerfile $(Build.SourcesDirectory)/Modules/ContainerRegistries/web

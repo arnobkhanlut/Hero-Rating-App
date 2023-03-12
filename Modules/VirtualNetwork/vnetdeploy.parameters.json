@@ -1,0 +1,48 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "virtualNetworkName": {
+            "value": "vnet-lp22-casestudy4"
+        },
+        "addressPrefix": {
+            "value": "10.1.1.0/24"
+        },
+        "apiSubnetPrefix": {
+            "value": "10.1.1.0/26"
+        },
+        "apiSubnetName": {
+            "value": "snet-api"
+        },
+        "apiNsgName": {
+            "value": "nsg-api"
+        },
+        "dbSubnetPrefix": {
+            "value": "10.1.1.192/27"
+        },
+        "dbSubnetName": {
+            "value": "snet-db"
+        },
+        "dbNsgName": {
+            "value": "nsg-db"
+        },
+        "appSubnetPrefix": {
+            "value": "10.1.1.64/28"
+        },
+        "appSubnetName": {
+            "value": "snet-app"
+        },
+        "bastionSubnetPrefix": {
+            "value": "10.1.1.128/27"
+        },
+        "bastionSubnetName": {
+            "value": "AzureBastionSubnet"
+        },
+        "natgatewayname": {
+            "value": "lp22Natgatway"
+        },
+        "publicipname": {
+            "value": "lp22PublicIP"
+        }
+    }
+}

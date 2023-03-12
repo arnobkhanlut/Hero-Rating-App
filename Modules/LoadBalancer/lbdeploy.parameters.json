@@ -1,0 +1,18 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "vmssName": {
+      "value": "lp22vmsscasestudy4"
+    },
+    "virtualNetworkName": {
+      "value": "vnet-lp22-casestudy4"
+    },
+    "subnetName": {
+      "value": "snet-api"
+    },
+    "loadBalancerName": {
+      "value": "lb-lp22-casestudy4"
+    }
+  }
+}

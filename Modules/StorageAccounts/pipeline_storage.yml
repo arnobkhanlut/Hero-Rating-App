@@ -1,0 +1,29 @@
+variables:
+  rgName: 'lp22-casestudy4-dev'
+  location: 'northeurope'
+  spnName: 'lp22-casestudy-devops-spn'
+  storageAccountName: 'lp22casestudy4001'
+
+resources:
+  - repo: self
+  
+trigger: none
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+- stage: DeployStorage
+  jobs:
+  - job: DeployStorage
+    displayName: "Deploy Storage"
+    steps:
+    - task: AzureResourceGroupDeployment@2
+      displayName: "Deploy Storage"
+      inputs:
+        azureSubscription: $(spnName)
+        resourceGroupName: $(rgName)
+        location: $(location)
+        csmFile: $(Build.SourcesDirectory)/Modules/StorageAccounts/storagedeploy.json
+        csmParametersFile: $(Build.SourcesDirectory)/Modules/StorageAccounts/storagedeploy.parameters.json
+        overrideParameters: '-storageAccountName $(storageAccountName)'

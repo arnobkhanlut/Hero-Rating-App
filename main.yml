@@ -1,0 +1,92 @@
+variables:
+- group: lp22_caseStudy4_VariableGroup
+- name: rgName
+  value: "lp22-casestudy4-dev"
+- name: location
+  value: "northeurope"
+- name: spnName
+  value: "lp22-casestudy-devops-spn"
+- name: virtualNetworkName
+  value: "vnet-lp22-casestudy4"
+- name: loadBalancerName
+  value: "lb-lp22-casestudy4"
+- name: keyVaultName
+  value: "kv-casestudy4team4"
+- name: AcrName
+  value: "lp22casestudy4dev"
+
+resources:
+  - repo: self
+  
+trigger: 
+  branches:
+    include: 
+      - master
+  paths:
+    include:
+      - Modules/VirtualNetwork/*
+      - Modules/VirtualMachines/*
+      - Modules/LoadBalancer/*
+      - Modules/ContainerRegistries/*
+      - Modules/WebApp/*
+
+pool:
+  vmImage: 'ubuntu-18.04'
+
+stages:
+- stage: DeployVnet
+  jobs:
+  - template: ./Modules/VirtualNetwork/nestedpipeline_vnet.yml
+    parameters:
+      rgName: $(rgName)
+      location: $(location)
+      spnName: $(spnName)
+      virtualNetworkName: $(virtualNetworkName)
+- stage: DeployDbVM
+  dependsOn: DeployVnet
+  jobs:
+  - template: ./Modules/VirtualMachines/nestedpipeline_vmdb.yml
+    parameters:
+      rgName: $(rgName)
+      location: $(location)
+      spnName: $(spnName)
+      virtualNetworkName: $(virtualNetworkName)
+- stage: DeployApiVM
+  dependsOn: DeployVnet
+  jobs:
+  - template: ./Modules/VirtualMachines/nestedpipeline_vmapi.yml
+    parameters:
+      rgName: $(rgName)
+      location: $(location)
+      spnName: $(spnName)
+      virtualNetworkName: $(virtualNetworkName)
+- stage: DeployLoadBalancer
+  dependsOn: DeployApiVM
+  jobs:
+  - template: ./Modules/LoadBalancer/nestedpipeline_lb.yml
+    parameters:
+      rgName: $(rgName)
+      location: $(location)
+      spnName: $(spnName)
+      virtualNetworkName: $(virtualNetworkName)
+      loadBalancerName: $(loadBalancerName)
+- stage: DeployAcrDocker
+  dependsOn: DeployLoadBalancer
+  jobs:
+  - template: ./Modules/ContainerRegistries/nestedpipeline_acr.yml
+    parameters:
+      rgName: $(rgName)
+      location: $(location)
+      spnName: $(spnName)
+      AcrName: $(AcrName)
+      keyVaultName: $(keyVaultName)
+- stage: PublishArtifact
+  dependsOn: DeployAcrDocker
+  jobs:
+  - job: Publish_Artifact
+    steps:
+    - task: PublishPipelineArtifact@1
+      inputs: 
+        targetPath: '$(Pipeline.Workspace)'
+        artifactType: 'pipeline'
+        artifactName: 'drop'

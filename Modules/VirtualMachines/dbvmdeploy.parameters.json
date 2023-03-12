@@ -1,0 +1,50 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "vmName": {
+      "value": "lp22vmcasestudy4"
+    },
+    "virtualNetworkName": {
+      "value": "vnet-lp22-casestudy4"
+    },
+    "subnetName": {
+      "value": "snet-db"
+    },
+    "adminUsername": {
+      "value": "perfectadmin"
+    },
+    "adminPasswordOrKey": {
+      "reference": {
+        "keyVault": {
+          "id": "/subscriptions/56f39360-7d54-4ca9-a5db-619e7dfd47d5/resourceGroups/lp22-casestudy4-dev/providers/Microsoft.KeyVault/vaults/kv-casestudy4team4"
+        },
+        "secretName": "vmAdminPassword"
+      }
+    },
+    "fileUris": {
+      "reference": {
+        "keyVault": {
+          "id": "/subscriptions/56f39360-7d54-4ca9-a5db-619e7dfd47d5/resourceGroups/lp22-casestudy4-dev/providers/Microsoft.KeyVault/vaults/kv-casestudy4team4"
+        },
+        "secretName": "dbscript"
+      }
+    },
+    "blobBaseUri": {
+      "reference": {
+        "keyVault": {
+          "id": "/subscriptions/56f39360-7d54-4ca9-a5db-619e7dfd47d5/resourceGroups/lp22-casestudy4-dev/providers/Microsoft.KeyVault/vaults/kv-casestudy4team4"
+        },
+        "secretName": "blobbaseurl"
+      }
+    },
+    "blobSasToken": {
+      "reference": {
+        "keyVault": {
+          "id": "/subscriptions/56f39360-7d54-4ca9-a5db-619e7dfd47d5/resourceGroups/lp22-casestudy4-dev/providers/Microsoft.KeyVault/vaults/kv-casestudy4team4"
+        },
+        "secretName": "blobsastoken"
+      }
+    }
+  }
+}

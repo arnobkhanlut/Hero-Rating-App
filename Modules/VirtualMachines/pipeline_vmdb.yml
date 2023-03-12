@@ -1,0 +1,37 @@
+variables:
+- group: lp22_caseStudy4_VariableGroup
+- name: rgName
+  value: 'lp22-casestudy4-dev'
+- name: location
+  value: 'northeurope'
+- name: spnName
+  value: 'lp22-casestudy-devops-spn'
+
+resources:
+  - repo: self
+  
+trigger: none
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+- stage: Deploydbvm
+  jobs:
+  - job: Deploydbvm
+    displayName: "Deploy dbvm"
+    steps:
+    - task: AzureResourceGroupDeployment@2
+      displayName: "Deploy dbvm"
+      inputs:
+        azureSubscription: $(spnName)
+        resourceGroupName: $(rgName)
+        location: $(location)
+        csmFile: $(Build.SourcesDirectory)/Modules/VirtualMachines/dbvmdeploy.json
+        csmParametersFile: $(Build.SourcesDirectory)/Modules/VirtualMachines/dbvmdeploy.parameters.json
+        overrideParameters: '-virtualNetworkName "vnet-lp22-casestudy4" 
+                            -subnetName "snet-db" 
+                            -adminPasswordOrKey $(vmAdminPassword)
+                            -fileUris $(dbscript) 
+                            -blobBaseUri $(blobbaseurl) 
+                            -blobSasToken "$(blobsastoken)"'
